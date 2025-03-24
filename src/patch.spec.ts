@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { add, remove, replace, move, copy } from './patch';
+import { add, remove, replace, move, copy, test } from './patch';
 
 describe('JSON Pointer Operations', () => {
   const initialObject = {
@@ -129,6 +129,92 @@ describe('JSON Pointer Operations', () => {
         ...initialObject,
         b: { ...initialObject.b, copy: 5 },
       });
+    });
+  });
+
+  describe('test', () => {
+    it('tests a matching value at the root path', () => {
+      const obj = { key: 'value' };
+      const result = test(obj, {
+        op: 'test',
+        path: '',
+        value: { key: 'value' },
+      });
+      expect(result).toBe(obj);
+    });
+
+    it('tests a matching numeric value in an object', () => {
+      const result = test(initialObject, { op: 'test', path: '/a', value: 1 });
+      expect(result).toBe(initialObject);
+    });
+
+    it('tests a matching array element', () => {
+      const result = test(initialObject, {
+        op: 'test',
+        path: '/e/0',
+        value: 5,
+      });
+      expect(result).toBe(initialObject);
+    });
+
+    it('tests a nested object value', () => {
+      const result = test(initialObject, {
+        op: 'test',
+        path: '/b/c',
+        value: 2,
+      });
+      expect(result).toBe(initialObject);
+    });
+
+    it('tests a nested array for exact equality', () => {
+      const result = test(initialObject, {
+        op: 'test',
+        path: '/b/d',
+        value: [3, 4],
+      });
+      expect(result).toBe(initialObject);
+    });
+
+    it('throws an error if the value does not match (primitive mismatch)', () => {
+      expect(() => test(initialObject, { op: 'test', path: '/a', value: 999 })).toThrowError(
+        /Test operation failed due to value mismatch/i,
+      );
+    });
+
+    it('throws an error for a mismatch in object values', () => {
+      expect(() =>
+        test(initialObject, {
+          op: 'test',
+          path: '/b/c',
+          value: { unexpected: true },
+        }),
+      ).toThrowError(/Test operation failed due to value mismatch/i);
+    });
+
+    it('throws an error for an invalid path', () => {
+      expect(() => test(initialObject, { op: 'test', path: '/x', value: 'anything' })).toThrowError(/Key not found/i);
+    });
+
+    it('tests deeply nested structures', () => {
+      const deeplyNested = {
+        x: {
+          y: {
+            z: [{ foo: 'bar' }, { foo: 'baz' }],
+          },
+        },
+      };
+      const result = test(deeplyNested, {
+        op: 'test',
+        path: '/x/y/z',
+        value: [{ foo: 'bar' }, { foo: 'baz' }],
+      });
+      expect(result).toBe(deeplyNested);
+    });
+
+    it('throws an error for mismatched arrays', () => {
+      expect(() => test(initialObject, { op: 'test', path: '/e', value: [5, 6, 7] })).toThrowError(
+        /Test operation failed due to value mismatch/i,
+      );
     });
   });
 });

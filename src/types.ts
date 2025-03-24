@@ -40,5 +40,5 @@ export type CopyOp = {
 export type TestOp = {
   op: 'test';
   path: string;
-  value: JSONObject;
+  value: JSONValue;
 };

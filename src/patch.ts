@@ -1,6 +1,6 @@
-import { isObject, interpretPath } from './helpers';
+import { isObject, interpretPath, isEqual } from './helpers';
 import { evaluate } from './pointer';
-import { JSONObject, AddOp, CopyOp, MoveOp, Operation, RemoveOp, ReplaceOp } from './types';
+import { JSONObject, AddOp, CopyOp, MoveOp, Operation, RemoveOp, ReplaceOp, TestOp } from './types';
 
 export const add = (object: JSONObject, operation: AddOp): JSONObject => {
   const { path, value } = operation;
@@ -141,6 +141,30 @@ export const move = (object: JSONObject, operation: MoveOp) => {
   });
 };
 
+// Test operation
+//
+// > The "test" operation tests that a value at the target location is
+// > equal to a specified value.
+// > The operation object MUST contain a "value" member that conveys the
+// > value to be compared to the target location's value.
+//
+// Note that this operation returns the original object if successful. It will only
+// produce a side effect if the operation is considered unsuccessful. This is because the RFC
+// allows for patch chaining, so a functional implementation of applyPatch will necessitate that
+// `test` returns a value
+export const test = (object: JSONObject, operation: TestOp) => {
+  const evaluateValue = evaluate(operation.path, object);
+  const compareValue = operation.value;
+  // The operation is considered NOT successful and should therefore throw a fatal error
+  // >  If a normative requirement is violated by a JSON Patch document, or
+  // >  if an operation is not successful, evaluation of the JSON Patch
+  // >  document SHOULD terminate and application of the entire patch
+  // >  document SHALL NOT be deemed successful.
+  if (!isEqual(evaluateValue, compareValue)) throw new Error('Test operation failed due to value mismatch.');
+
+  return object;
+};
+
 // Copy operation
 //
 // > This operation is functionally identical to an "add" operation at the
@@ -170,7 +194,8 @@ export const apply = (object: JSONObject, operation: Operation) => {
       return replace(object, operation);
     case 'move':
       return move(object, operation);
-    // TODO - implement test
+    case 'test':
+      return test(object, operation);
     default:
       return object;
   }
@@ -182,6 +207,7 @@ export const applyPatch = (
   hooks?: ((object: JSONObject, operations: Operation[]) => void)[],
 ) => {
   const result = operations.reduce((object, operation) => apply(object, operation), object);
+
   if (hooks && hooks.length > 0) {
     hooks.forEach((hook) => {
       hook(result, operations);
