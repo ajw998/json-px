@@ -70,7 +70,7 @@ export const evaluate = (object: JSONObject, pointer: string) => {
     // > unique in an object, the member that is referenced is undefined,
     // > and evaluation fails
     if (isObject(acc)) {
-      if (!Object.hasOwn(acc, token)) throw new Error(`Key not found: ${token}`);
+      if (!Object.hasOwn(acc, token)) throw new Error(`Key not found: ${token ? token : '\"\"'}`);
 
       return acc[token];
     }

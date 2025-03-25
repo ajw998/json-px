@@ -6,6 +6,19 @@ This library focuses on implementation correctness.
 
 ## Functions
 
+### JSON Pointer
+
+`evaluate`
+
+Evaluate a JSON pointer
+
+```typescript
+evaluate({ foo: 'bar' }, '/foo')
+
+// Result
+// bar
+```
+
 ### High-level operations
 
 `apply`
