@@ -96,3 +96,6 @@ test({ user: { name: 'Jane' } }, { op: 'test', path: '/user/name', value: 'Jane'
 test({ user: { name: 'Jane' } }, { op: 'test', path: '/user/name', value: 'Invalid value' });
 // Result: Error
 ```
+
+## License
+MIT
