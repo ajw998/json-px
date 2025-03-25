@@ -1,5 +1,5 @@
-import { isObject, interpretPath } from './helpers';
-import { JSONObject } from './types';
+import { isObject, interpretPath } from './helpers.js';
+import { JSONObject } from './types.js';
 
 // Escape JSON Pointer string token part
 //
@@ -11,8 +11,7 @@ import { JSONObject } from './types';
 // > reference token.
 export const escapeToken = (str: string) => str.replace(/~/g, '~0').replace(/\//g, '~1');
 
-// TODO - Handle trailing slashes
-export const evaluate = (pointer: string, object: JSONObject) => {
+export const evaluate = (object: JSONObject, pointer: string) => {
   const { paths } = interpretPath(pointer);
 
   if (!isObject(object)) throw new Error(`The root object is not a valid JSON object.`);

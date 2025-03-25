@@ -1,6 +1,6 @@
-import { isObject, interpretPath, isEqual } from './helpers';
-import { evaluate } from './pointer';
-import { JSONObject, AddOp, CopyOp, MoveOp, Operation, RemoveOp, ReplaceOp, TestOp } from './types';
+import { isObject, interpretPath, isEqual } from './helpers.js';
+import { evaluate } from './pointer.js';
+import { JSONObject, AddOp, CopyOp, MoveOp, Operation, RemoveOp, ReplaceOp, TestOp } from './types.js';
 
 export const add = (object: JSONObject, operation: AddOp): JSONObject => {
   const { path, value } = operation;
@@ -26,7 +26,7 @@ export const add = (object: JSONObject, operation: AddOp): JSONObject => {
   // > [T]he object itself or an array containing it does need to
   // > exist, and it remains an error for that not to be the case.
   const maybeValidPath = paths.slice(0, -1);
-  const target = evaluate(maybeValidPath.join('/'), objectClone);
+  const target = evaluate(objectClone, maybeValidPath.join('/'));
 
   // If the last element is '-', this means the user is attempting
   // to push an element to an array. The preconditions to this is
@@ -94,7 +94,7 @@ export const remove = (object: JSONObject, operation: RemoveOp): JSONObject => {
   if (lastEl === '-') throw new Error(`Invalid pointer for remove operation: ${operation.path}`);
 
   const maybeValidPath = paths.slice(0, -1);
-  const target = evaluate(maybeValidPath.join('/'), objectClone);
+  const target = evaluate(objectClone, maybeValidPath.join('/'));
 
   if (/^\d+$/.test(lastEl)) {
     if (!Array.isArray(target)) throw new Error(`Cannot remove array elements at non-Array target.`);
@@ -133,7 +133,7 @@ export const replace = (object: JSONObject, operation: ReplaceOp) => {
 // > the "from" location, followed immediately by an "add" operation at
 // > the target location with the value that was just removed.
 export const move = (object: JSONObject, operation: MoveOp) => {
-  const value = evaluate(operation.from, object);
+  const value = evaluate(object, operation.from);
   return add(remove(object, { op: 'remove', path: operation.from }), {
     op: 'add',
     path: operation.path,
@@ -153,7 +153,7 @@ export const move = (object: JSONObject, operation: MoveOp) => {
 // allows for patch chaining, so a functional implementation of applyPatch will necessitate that
 // `test` returns a value
 export const test = (object: JSONObject, operation: TestOp) => {
-  const evaluateValue = evaluate(operation.path, object);
+  const evaluateValue = evaluate(object, operation.path);
   const compareValue = operation.value;
   // The operation is considered NOT successful and should therefore throw a fatal error
   // >  If a normative requirement is violated by a JSON Patch document, or
@@ -174,7 +174,7 @@ export const copy = (object: JSONObject, operation: CopyOp) => {
 
   if (from === path) return object;
 
-  const value = evaluate(operation.from, object);
+  const value = evaluate(object, operation.from);
   return add(object, { ...operation, op: 'add', value });
 };
 
